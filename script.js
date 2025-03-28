@@ -791,21 +791,32 @@ function createArtworkCard(artwork) {
         creator = 'Saros';
     }
 
-    // Add tags section to hover-content
     const tagsHTML = artwork.tags ? artwork.tags.map(tag => 
         `<span class="tag" onclick="searchByTag('${tag}')">${tag}</span>`
     ).join('') : '';
     
-    return `
-        <div class="artwork-card" onclick="openModal('${artwork.imageUrl}')">
-            <img src="${artwork.imageUrl}" alt="AI Artwork">
-            <div class="hover-content">
-                <div class="creator">${creator}</div>
-                <div class="tags">${tagsHTML}</div>
-                <div class="prompt">${artwork.prompt || "No prompt available"}</div>
-            </div>
+    const card = document.createElement('div');
+    card.className = 'artwork-card';
+    card.onclick = () => openModal(artwork.imageUrl);
+    
+    // Create image element
+    const img = new Image();
+    img.src = artwork.imageUrl;
+    img.alt = "AI Artwork";
+    
+    // Add content
+    card.innerHTML = `
+        <div class="hover-content">
+            <div class="creator">${creator}</div>
+            <div class="tags">${tagsHTML}</div>
+            <div class="prompt">${artwork.prompt || "No prompt available"}</div>
         </div>
     `;
+    
+    // Insert image at the beginning
+    card.insertBefore(img, card.firstChild);
+    
+    return card;
 }
 
 // Function to search artworks based on prompt keywords
@@ -849,26 +860,20 @@ function populateGallery(filteredArtworks = null, append = false) {
     const container = document.querySelector('.artwork-grid');
     
     if (!append) {
-        container.innerHTML = ''; // Clear only if not appending
+        container.innerHTML = '';
     }
 
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
     const currentBatch = artworksToShow.slice(startIndex, endIndex);
 
-    // Create and append placeholder cards first
     currentBatch.forEach(artwork => {
-        const card = createArtworkCardPlaceholder(artwork);
+        const card = createArtworkCard(artwork);
         container.appendChild(card);
     });
 
-    // Load images with proper handling
-    currentBatch.forEach((artwork, index) => {
-        loadImageWithFallback(artwork, startIndex + index);
-    });
-
-    // Preload next batch
-    preloadNextImages(endIndex, artworksToShow);
+    isLoading = false;
+    allArtworksLoaded = endIndex >= artworksToShow.length;
 }
 
 // Add these new functions
