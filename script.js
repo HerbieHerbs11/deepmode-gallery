@@ -796,17 +796,32 @@ function createArtworkCard(artwork) {
     ).join('') : '';
     
     const card = document.createElement('div');
-    card.className = 'artwork-card';
+    card.className = 'artwork-card loading'; // Add loading state
     card.onclick = () => openModal(artwork.imageUrl);
     
+    // Create image element separately for better control
+    const img = new Image();
+    img.className = 'artwork-image';
+    img.alt = "AI Artwork";
+    
+    // Only show image once it's loaded
+    img.onload = () => {
+        card.classList.remove('loading');
+        img.style.opacity = '1';
+    };
+    
+    img.src = artwork.imageUrl;
+    
     card.innerHTML = `
-        <img src="${artwork.imageUrl}" alt="AI Artwork">
         <div class="hover-content">
             <div class="creator">${creator}</div>
             <div class="tags">${tagsHTML}</div>
             <div class="prompt">${artwork.prompt || "No prompt available"}</div>
         </div>
     `;
+    
+    // Insert image at the beginning
+    card.insertBefore(img, card.firstChild);
     
     return card;
 }
@@ -853,16 +868,23 @@ function populateGallery(filteredArtworks = null, append = false) {
     
     if (!append) {
         container.innerHTML = '';
+        currentPage = 1;
     }
 
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
     const currentBatch = artworksToShow.slice(startIndex, endIndex);
 
+    // Create document fragment for better performance
+    const fragment = document.createDocumentFragment();
+    
     currentBatch.forEach(artwork => {
         const card = createArtworkCard(artwork);
-        container.appendChild(card);
+        fragment.appendChild(card);
     });
+    
+    // Append all cards at once
+    container.appendChild(fragment);
 
     isLoading = false;
     allArtworksLoaded = endIndex >= artworksToShow.length;
