@@ -799,22 +799,14 @@ function createArtworkCard(artwork) {
     card.className = 'artwork-card';
     card.onclick = () => openModal(artwork.imageUrl);
     
-    // Create image element
-    const img = new Image();
-    img.src = artwork.imageUrl;
-    img.alt = "AI Artwork";
-    
-    // Add content
     card.innerHTML = `
+        <img src="${artwork.imageUrl}" alt="AI Artwork">
         <div class="hover-content">
             <div class="creator">${creator}</div>
             <div class="tags">${tagsHTML}</div>
             <div class="prompt">${artwork.prompt || "No prompt available"}</div>
         </div>
     `;
-    
-    // Insert image at the beginning
-    card.insertBefore(img, card.firstChild);
     
     return card;
 }
