@@ -192,60 +192,27 @@ body {
     cursor: pointer;
     overflow: hidden;
     border-radius: 4px;
-    transform: translateY(0);
-    transition: all 0.3s ease;
-    background: rgba(255, 255, 255, 0.05); /* Add subtle placeholder background */
-    min-height: 200px; /* Minimum height to prevent layout shifts */
+    background: rgba(255, 255, 255, 0.05);
+    min-height: 200px;
 }
 
-/* Add loading state styles */
-.artwork-card.loading {
-    position: relative;
-}
-
-.artwork-card.loading::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0.05) 25%,
-        rgba(255, 255, 255, 0.1) 50%,
-        rgba(255, 255, 255, 0.05) 75%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-    0% {
-        background-position: 200% 0;
-    }
-    100% {
-        background-position: -200% 0;
-    }
-}
-
-/* Ensure smooth image transitions */
 .artwork-card img {
     width: 100%;
     height: auto;
     display: block;
     object-fit: cover;
     border-radius: 4px;
-    transition: transform 0.3s ease, opacity 0.3s ease;
     transform: scale(1);
-    opacity: 0; /* Start invisible */
+    transition: transform 0.3s ease;
+    will-change: transform;
+    backface-visibility: hidden;
 }
 
-.artwork-card img.loaded {
-    opacity: 1; /* Fade in when loaded */
+.artwork-card:hover img {
+    transform: scale(1.05);
 }
 
-/* Add a permanent tint/overlay */
+/* Single overlay definition */
 .artwork-card::before {
     content: '';
     position: absolute;
@@ -261,30 +228,8 @@ body {
     );
     z-index: 1;
     pointer-events: none;
-    transition: all 0.3s ease;
-}
-
-.artwork-card:hover::before {
-    background: linear-gradient(to bottom, 
-        rgba(4, 11, 20, 0.4) 0%,
-        rgba(4, 11, 20, 0.2) 40%,
-        rgba(4, 11, 20, 0.4) 80%,
-        rgba(4, 11, 20, 0.95) 100%
-    );
-}
-
-.artwork-card img {
-    width: 100%;
-    height: auto;
-    display: block;
-    object-fit: cover;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-    transform: scale(1);
-}
-
-.artwork-card:hover img {
-    transform: scale(1.05);
+    transition: opacity 0.3s ease;
+    opacity: 1;
 }
 
 /* Update hover content to work with the overlay */
@@ -341,10 +286,6 @@ body {
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
-}
-
-.artwork-card img.loaded {
-    animation: fadeIn 0.5s ease forwards;
 }
 
 /* Responsive column counts */
