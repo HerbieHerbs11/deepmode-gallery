@@ -839,36 +839,108 @@ let currentPage = 1;
 let isLoading = false;
 let allArtworksLoaded = false;
 
-// Update the populateGallery function to always shuffle the artworks
+// Add these variables at the top of your script
+const imageCache = new Map(); // To store preloaded images
+const PRELOAD_COUNT = 10; // Number of images to preload
+
+// Update your populateGallery function
 function populateGallery(filteredArtworks = null, append = false) {
-    const gallery = document.querySelector('.artwork-grid');
-    let artworksToUse = filteredArtworks || [...artworks]; // Create a copy of the array
-    
-    // Always shuffle the artworks unless they're already filtered by search
-    if (!filteredArtworks || filteredArtworks.length === artworks.length) {
-        artworksToUse = shuffleArray([...artworksToUse]);
-    }
+    const artworksToShow = filteredArtworks || artworks;
+    const container = document.querySelector('.artwork-grid');
     
     if (!append) {
-        gallery.innerHTML = '';
-        currentPage = 1;
+        container.innerHTML = ''; // Clear only if not appending
     }
-    
-    if (artworksToUse.length === 0) {
-        gallery.innerHTML = '<div class="no-results">No images found matching your search.</div>';
-        return;
-    }
-    
+
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    const artworksToShow = artworksToUse.slice(startIndex, endIndex);
-    
-    artworksToShow.forEach(artwork => {
-        gallery.insertAdjacentHTML('beforeend', createArtworkCard(artwork));
+    const currentBatch = artworksToShow.slice(startIndex, endIndex);
+
+    // Create and append placeholder cards first
+    currentBatch.forEach(artwork => {
+        const card = createArtworkCardPlaceholder(artwork);
+        container.appendChild(card);
     });
+
+    // Load images with proper handling
+    currentBatch.forEach((artwork, index) => {
+        loadImageWithFallback(artwork, startIndex + index);
+    });
+
+    // Preload next batch
+    preloadNextImages(endIndex, artworksToShow);
+}
+
+// Add these new functions
+function createArtworkCardPlaceholder(artwork) {
+    const card = document.createElement('div');
+    card.className = 'artwork-card loading';
+    card.setAttribute('data-id', artwork.id);
+    // Add minimal structure needed for placeholder
+    card.innerHTML = `
+        <div class="artwork-placeholder"></div>
+        <div class="hover-content">
+            <div class="creator">${artwork.creator}</div>
+            <div class="prompt">${artwork.prompt}</div>
+            <div class="tags">${createTagsHtml(artwork.tags)}</div>
+        </div>
+    `;
+    return card;
+}
+
+function loadImageWithFallback(artwork, index) {
+    const card = document.querySelector(`.artwork-card[data-id="${artwork.id}"]`);
+    if (!card) return;
+
+    // Check if image is already cached
+    if (imageCache.has(artwork.imageUrl)) {
+        updateCardWithImage(card, imageCache.get(artwork.imageUrl), artwork);
+        return;
+    }
+
+    const img = new Image();
     
-    allArtworksLoaded = endIndex >= artworksToUse.length;
-    isLoading = false;
+    img.onload = () => {
+        imageCache.set(artwork.imageUrl, img.src);
+        updateCardWithImage(card, img.src, artwork);
+    };
+
+    img.onerror = () => {
+        // Handle failed image load
+        card.classList.remove('loading');
+        card.classList.add('error');
+    };
+
+    img.src = artwork.imageUrl;
+}
+
+function updateCardWithImage(card, imageSrc, artwork) {
+    // Remove placeholder and add actual image
+    card.classList.remove('loading');
+    
+    // Create image element if it doesn't exist
+    if (!card.querySelector('img')) {
+        const img = document.createElement('img');
+        img.alt = artwork.prompt;
+        card.insertBefore(img, card.firstChild);
+    }
+    
+    const img = card.querySelector('img');
+    img.src = imageSrc;
+}
+
+function preloadNextImages(startIndex, artworksArray) {
+    const nextImages = artworksArray.slice(startIndex, startIndex + PRELOAD_COUNT);
+    
+    nextImages.forEach(artwork => {
+        if (!imageCache.has(artwork.imageUrl)) {
+            const img = new Image();
+            img.onload = () => {
+                imageCache.set(artwork.imageUrl, img.src);
+            };
+            img.src = artwork.imageUrl;
+        }
+    });
 }
 
 // Add infinite scroll handler
